@@ -1,8 +1,12 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { M0Pet } from "../target/types/m_0_pet";
-import { PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import assert from "node:assert";
+import dotenv from "dotenv";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+
+dotenv.config();
 
 describe("registry", () => {
     const provider = anchor.AnchorProvider.env();
@@ -12,7 +16,7 @@ describe("registry", () => {
 
     const payer = provider.wallet;
 
-    const validator = new PublicKey("86JVuHTZUHoK4HyndmcskmocxzMiXrT33T4a4znyvivk");
+    const validator = Keypair.fromSeed(bs58.decode(process.env.VALIDATOR_SECRET_KEY!)).publicKey;
 
     const [registry] = PublicKey.findProgramAddressSync(
         [Buffer.from("validator_registry")],
