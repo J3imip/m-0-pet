@@ -6,6 +6,10 @@ pub struct InitRegistry<'info> {
     #[account(
         init,
         payer = authority,
+        // 8 bytes - discriminator
+        // 32 bytes - owner
+        // 4 bytes - space for length of validator_keys vector
+        // 32 bytes * MAX_VALIDATORS - validator_keys
         space = 8 + 32 + 4 + 32 * MAX_VALIDATORS as usize,
         seeds = [b"validator_registry"],
         bump
