@@ -4,7 +4,7 @@ target
 **/*.rs.bk
 node_modules
 test-ledger
-yarn.lock
+.yarn
 .idea
 .vscode
 .env
