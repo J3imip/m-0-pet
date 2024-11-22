@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::{system_instruction, program::invoke_signed};
 use anchor_lang::solana_program::sysvar::instructions::{load_instruction_at_checked, load_current_index_checked};
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -40,10 +41,8 @@ pub struct MintTokens<'info> {
     pub instruction_sysvar: AccountInfo<'info>,
     /// CHECK:
     #[account(
-        init,
+        mut,
         seeds = [b"mint_lock", proof.signature_hash.as_ref()],
-        payer = payer,
-        space = 8,
         bump,
     )]
     pub mint_lock: AccountInfo<'info>,
@@ -59,6 +58,40 @@ pub struct Proof {
 }
 
 pub fn handler(ctx: Context<MintTokens>, proof: Proof, quantity: u64) -> Result<()> {
+    let mint_lock_key = Pubkey::create_program_address(
+        &[
+            b"mint_lock",
+            proof.signature_hash.as_ref(),
+            &[ctx.bumps.mint_lock],
+        ],
+        ctx.program_id,
+    )
+    .map_err(|_| ErrorCode::InvalidSeeds)?;
+
+    if ctx.accounts.mint_lock.key == &mint_lock_key && ctx.accounts.mint_lock.lamports() > 0 {
+        return Err(ErrorCode::TokensAlreadyMinted.into());
+    }
+
+    invoke_signed(
+        &system_instruction::create_account(
+            ctx.accounts.payer.key,
+            &mint_lock_key,
+            Rent::get()?.minimum_balance(8),
+            8, 
+            ctx.program_id,
+        ),
+        &[
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.mint_lock.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+        &[&[
+            b"mint_lock",
+            proof.signature_hash.as_ref(),
+            &[ctx.bumps.mint_lock],
+        ]],
+    )?;
+
     let registry = &mut ctx.accounts.registry;
     let message = [
         proof.minter.as_ref(),

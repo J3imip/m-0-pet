@@ -20,4 +20,8 @@ pub enum ErrorCode {
     InvalidMessage,
     #[msg("Mint Lock Conflict")]
     MintLockConflict,
+    #[msg("Invalid Seeds")]
+    InvalidSeeds,
+    #[msg("Tokens Already Minted")]
+    TokensAlreadyMinted,
 }
